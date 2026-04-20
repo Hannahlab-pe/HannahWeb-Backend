@@ -15,13 +15,17 @@ async function bootstrap() {
     }),
   );
 
+  const allowedOrigins = [
+    'https://www.hannahlab.com',
+    'https://hannahlab.com',
+    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  ];
+
   app.enableCors({
     origin: (origin, callback) => {
-      // Permitir localhost en cualquier puerto (desarrollo) + la URL de producción configurada
-      const prodUrl = process.env.FRONTEND_URL;
       const isLocalhost = !origin || /^https?:\/\/localhost(:\d+)?$/.test(origin);
-      const isProd = prodUrl && origin === prodUrl;
-      if (isLocalhost || isProd) {
+      const isAllowed = allowedOrigins.includes(origin!);
+      if (isLocalhost || isAllowed) {
         callback(null, true);
       } else {
         callback(new Error(`CORS bloqueado para origen: ${origin}`));
