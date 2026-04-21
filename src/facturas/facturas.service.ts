@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Factura } from './entities/factura.entity';
 import { CreateFacturaDto } from './dto/create-factura.dto';
 import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
+import { Proyecto } from '../proyectos/entities/proyecto.entity';
 
 @Injectable()
 export class FacturasService {
@@ -18,23 +19,25 @@ export class FacturasService {
       fechaEmision: dto.fechaEmision ? new Date(dto.fechaEmision) : undefined,
       fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : undefined,
       cliente: { id: dto.clienteId } as Usuario,
+      ...(dto.proyectoId && { proyecto: { id: dto.proyectoId } as Proyecto }),
     });
     return this.repo.save(factura);
   }
 
   findTodas(): Promise<Factura[]> {
-    return this.repo.find({ relations: ['cliente'], order: { creadoEn: 'DESC' } });
+    return this.repo.find({ relations: ['cliente', 'proyecto'], order: { creadoEn: 'DESC' } });
   }
 
   findPorCliente(clienteId: string): Promise<Factura[]> {
     return this.repo.find({
       where: { cliente: { id: clienteId } },
+      relations: ['proyecto'],
       order: { creadoEn: 'DESC' },
     });
   }
 
   async findOne(id: string, usuario: Usuario): Promise<Factura> {
-    const factura = await this.repo.findOne({ where: { id }, relations: ['cliente'] });
+    const factura = await this.repo.findOne({ where: { id }, relations: ['cliente', 'proyecto'] });
     if (!factura) throw new NotFoundException('Factura no encontrada');
     if (usuario.rol === RolUsuario.CLIENTE && factura.cliente.id !== usuario.id) {
       throw new ForbiddenException('No tienes acceso a esta factura');

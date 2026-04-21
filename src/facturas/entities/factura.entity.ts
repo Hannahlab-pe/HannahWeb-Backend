@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { Proyecto } from '../../proyectos/entities/proyecto.entity';
 
 export enum EstadoFactura {
   PENDIENTE = 'pendiente',
@@ -46,6 +47,9 @@ export class Factura {
 
   @ManyToOne(() => Usuario, { eager: false, nullable: false, onDelete: 'CASCADE' })
   cliente: Usuario;
+
+  @ManyToOne(() => Proyecto, (p) => p.facturas, { eager: false, nullable: true, onDelete: 'SET NULL' })
+  proyecto: Proyecto;
 
   @CreateDateColumn()
   creadoEn: Date;

@@ -40,4 +40,12 @@ export class CreateFacturaDto {
 
   @IsUUID()
   clienteId: string;
+
+  @IsOptional()
+  @IsUUID()
+  proyectoId?: string;
+}
+
+  @IsUUID()
+  clienteId: string;
 }

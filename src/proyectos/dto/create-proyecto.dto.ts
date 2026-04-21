@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsDateString,
   IsEnum,
   IsOptional,
@@ -42,4 +43,9 @@ export class CreateProyectoDto {
 
   @IsUUID()
   clienteId: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  encargadosIds?: string[];
 }

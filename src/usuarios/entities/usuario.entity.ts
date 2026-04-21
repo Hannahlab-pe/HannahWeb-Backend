@@ -9,6 +9,7 @@ import {
 
 export enum RolUsuario {
   ADMIN = 'admin',
+  SUBADMIN = 'subadmin',
   CLIENTE = 'cliente',
 }
 

@@ -21,7 +21,7 @@ export class ProyectosController {
     return this.proyectosService.crear(dto);
   }
 
-  @Roles(RolUsuario.ADMIN)
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Get()
   findTodos() {
     return this.proyectosService.findTodos();
@@ -37,7 +37,7 @@ export class ProyectosController {
     return this.proyectosService.findOne(id, usuario);
   }
 
-  @Roles(RolUsuario.ADMIN)
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Patch(':id')
   actualizar(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateProyectoDto>) {
     return this.proyectosService.actualizar(id, dto);

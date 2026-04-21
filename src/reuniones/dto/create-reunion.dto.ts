@@ -36,4 +36,8 @@ export class CreateReunionDto {
 
   @IsUUID()
   clienteId: string;
+
+  @IsOptional()
+  @IsUUID()
+  proyectoId?: string;
 }

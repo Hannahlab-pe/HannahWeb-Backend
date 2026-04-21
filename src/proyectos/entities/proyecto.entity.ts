@@ -2,6 +2,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -9,6 +11,9 @@ import {
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { Implementacion } from '../../implementaciones/entities/implementacion.entity';
+import { Reunion } from '../../reuniones/entities/reunion.entity';
+import { Documento } from '../../documentos/entities/documento.entity';
+import { Factura } from '../../facturas/entities/factura.entity';
 
 export enum EstadoProyecto {
   PENDIENTE = 'pendiente',
@@ -45,8 +50,21 @@ export class Proyecto {
   @ManyToOne(() => Usuario, { eager: false, nullable: false, onDelete: 'CASCADE' })
   cliente: Usuario;
 
+  @ManyToMany(() => Usuario, { eager: false })
+  @JoinTable({ name: 'proyecto_encargados' })
+  encargados: Usuario[];
+
   @OneToMany(() => Implementacion, (impl) => impl.proyecto)
   implementaciones: Implementacion[];
+
+  @OneToMany(() => Reunion, (r) => r.proyecto)
+  reuniones: Reunion[];
+
+  @OneToMany(() => Documento, (d) => d.proyecto)
+  documentos: Documento[];
+
+  @OneToMany(() => Factura, (f) => f.proyecto)
+  facturas: Factura[];
 
   @CreateDateColumn()
   creadoEn: Date;

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Documento } from './entities/documento.entity';
 import { CreateDocumentoDto } from './dto/create-documento.dto';
 import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
+import { Proyecto } from '../proyectos/entities/proyecto.entity';
 
 @Injectable()
 export class DocumentosService {
@@ -16,23 +17,25 @@ export class DocumentosService {
     const doc = this.repo.create({
       ...dto,
       cliente: { id: dto.clienteId } as Usuario,
+      ...(dto.proyectoId && { proyecto: { id: dto.proyectoId } as Proyecto }),
     });
     return this.repo.save(doc);
   }
 
   findTodos(): Promise<Documento[]> {
-    return this.repo.find({ relations: ['cliente'], order: { creadoEn: 'DESC' } });
+    return this.repo.find({ relations: ['cliente', 'proyecto'], order: { creadoEn: 'DESC' } });
   }
 
   findPorCliente(clienteId: string): Promise<Documento[]> {
     return this.repo.find({
       where: { cliente: { id: clienteId } },
+      relations: ['proyecto'],
       order: { creadoEn: 'DESC' },
     });
   }
 
   async findOne(id: string, usuario: Usuario): Promise<Documento> {
-    const doc = await this.repo.findOne({ where: { id }, relations: ['cliente'] });
+    const doc = await this.repo.findOne({ where: { id }, relations: ['cliente', 'proyecto'] });
     if (!doc) throw new NotFoundException('Documento no encontrado');
     if (usuario.rol === RolUsuario.CLIENTE && doc.cliente.id !== usuario.id) {
       throw new ForbiddenException('No tienes acceso a este documento');

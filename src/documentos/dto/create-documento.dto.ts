@@ -21,4 +21,8 @@ export class CreateDocumentoDto {
 
   @IsUUID()
   clienteId: string;
+
+  @IsOptional()
+  @IsUUID()
+  proyectoId?: string;
 }
