@@ -18,7 +18,7 @@ export class ImplementacionesController {
 
   // ── Implementaciones ─────────────────────────────────────────────
 
-  @Roles(RolUsuario.ADMIN)
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Post()
   crearImplementacion(@Body() dto: CreateImplementacionDto) {
     return this.service.crearImplementacion(dto);
@@ -37,7 +37,7 @@ export class ImplementacionesController {
     return this.service.findImplementacion(id, usuario);
   }
 
-  @Roles(RolUsuario.ADMIN)
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Patch(':id')
   actualizar(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateImplementacionDto>) {
     return this.service.actualizarImplementacion(id, dto);
@@ -51,19 +51,19 @@ export class ImplementacionesController {
 
   // ── Tareas Kanban ─────────────────────────────────────────────────
 
-  @Roles(RolUsuario.ADMIN)
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Post('tareas')
   crearTarea(@Body() dto: CreateTareaKanbanDto) {
     return this.service.crearTarea(dto);
   }
 
-  @Roles(RolUsuario.ADMIN)
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Patch('tareas/:id/mover')
   moverTarea(@Param('id', ParseUUIDPipe) id: string, @Body() dto: MoverTareaDto) {
     return this.service.moverTarea(id, dto);
   }
 
-  @Roles(RolUsuario.ADMIN)
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Delete('tareas/:id')
   eliminarTarea(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.eliminarTarea(id);
