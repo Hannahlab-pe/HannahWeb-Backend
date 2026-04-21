@@ -48,6 +48,17 @@ export class ProyectosService {
     });
   }
 
+  findComoEncargado(encargadoId: string): Promise<Proyecto[]> {
+    return this.repo
+      .createQueryBuilder('proyecto')
+      .innerJoin('proyecto.encargados', 'encargado', 'encargado.id = :encargadoId', { encargadoId })
+      .leftJoinAndSelect('proyecto.cliente', 'cliente')
+      .leftJoinAndSelect('proyecto.encargados', 'encargados')
+      .leftJoinAndSelect('proyecto.implementaciones', 'implementaciones')
+      .orderBy('proyecto.creadoEn', 'DESC')
+      .getMany();
+  }
+
   async findOne(id: string, usuario: Usuario): Promise<Proyecto> {
     const proyecto = await this.repo.findOne({
       where: { id },
