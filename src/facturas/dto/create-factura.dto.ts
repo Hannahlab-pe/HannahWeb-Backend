@@ -45,7 +45,3 @@ export class CreateFacturaDto {
   @IsUUID()
   proyectoId?: string;
 }
-
-  @IsUUID()
-  clienteId: string;
-}
