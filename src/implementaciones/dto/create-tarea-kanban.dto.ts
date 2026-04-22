@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsDateString,
   IsEnum,
   IsNumber,
@@ -38,8 +39,37 @@ export class CreateTareaKanbanDto {
   @IsDateString()
   fechaLimite?: string;
 
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  responsablesIds?: string[];
+
   @IsUUID()
   implementacionId: string;
+}
+
+export class UpdateTareaKanbanDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  titulo?: string;
+
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+
+  @IsOptional()
+  @IsEnum(PrioridadTarea)
+  prioridad?: PrioridadTarea;
+
+  @IsOptional()
+  @IsDateString()
+  fechaLimite?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  responsablesIds?: string[];
 }
 
 export class MoverTareaDto {

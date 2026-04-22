@@ -5,9 +5,10 @@ import { ImplementacionesController } from './implementaciones.controller';
 import { Implementacion } from './entities/implementacion.entity';
 import { TareaKanban } from './entities/tarea-kanban.entity';
 import { Proyecto } from '../proyectos/entities/proyecto.entity';
+import { Usuario } from '../usuarios/entities/usuario.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Implementacion, TareaKanban, Proyecto])],
+  imports: [TypeOrmModule.forFeature([Implementacion, TareaKanban, Proyecto, Usuario])],
   providers: [ImplementacionesService],
   controllers: [ImplementacionesController],
   exports: [ImplementacionesService],

@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Implementacion } from './entities/implementacion.entity';
 import { TareaKanban } from './entities/tarea-kanban.entity';
 import { CreateImplementacionDto } from './dto/create-implementacion.dto';
-import { CreateTareaKanbanDto, MoverTareaDto } from './dto/create-tarea-kanban.dto';
+import { CreateTareaKanbanDto, MoverTareaDto, UpdateTareaKanbanDto } from './dto/create-tarea-kanban.dto';
 import { Proyecto } from '../proyectos/entities/proyecto.entity';
 import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
 
@@ -17,6 +17,8 @@ export class ImplementacionesService {
     private readonly tareaRepo: Repository<TareaKanban>,
     @InjectRepository(Proyecto)
     private readonly proyectoRepo: Repository<Proyecto>,
+    @InjectRepository(Usuario)
+    private readonly usuarioRepo: Repository<Usuario>,
   ) {}
 
   // ── Implementaciones ─────────────────────────────────────────────
@@ -48,7 +50,7 @@ export class ImplementacionesService {
 
     return this.implRepo.find({
       where: { proyecto: { id: proyectoId } },
-      relations: ['tareas'],
+      relations: ['tareas', 'tareas.responsables'],
       order: { creadoEn: 'ASC' },
     });
   }
@@ -91,6 +93,10 @@ export class ImplementacionesService {
     const impl = await this.implRepo.findOne({ where: { id: dto.implementacionId } });
     if (!impl) throw new NotFoundException('Implementación no encontrada');
 
+    const responsables = dto.responsablesIds?.length
+      ? await this.usuarioRepo.findBy({ id: In(dto.responsablesIds) })
+      : [];
+
     const tarea = this.tareaRepo.create({
       titulo: dto.titulo,
       descripcion: dto.descripcion,
@@ -99,7 +105,30 @@ export class ImplementacionesService {
       orden: dto.orden ?? 0,
       fechaLimite: dto.fechaLimite ? new Date(dto.fechaLimite) : undefined,
       implementacion: impl,
+      responsables,
     });
+    return this.tareaRepo.save(tarea);
+  }
+
+  async actualizarTarea(id: string, dto: UpdateTareaKanbanDto): Promise<TareaKanban> {
+    const tarea = await this.tareaRepo.findOne({
+      where: { id },
+      relations: ['responsables'],
+    });
+    if (!tarea) throw new NotFoundException('Tarea no encontrada');
+
+    if (dto.titulo !== undefined) tarea.titulo = dto.titulo;
+    if (dto.descripcion !== undefined) tarea.descripcion = dto.descripcion;
+    if (dto.prioridad !== undefined) tarea.prioridad = dto.prioridad;
+    if (dto.fechaLimite !== undefined) {
+      tarea.fechaLimite = dto.fechaLimite ? new Date(dto.fechaLimite) : null;
+    }
+    if (dto.responsablesIds !== undefined) {
+      tarea.responsables = dto.responsablesIds.length
+        ? await this.usuarioRepo.findBy({ id: In(dto.responsablesIds) })
+        : [];
+    }
+
     return this.tareaRepo.save(tarea);
   }
 

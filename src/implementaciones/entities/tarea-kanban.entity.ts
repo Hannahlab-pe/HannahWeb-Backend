@@ -2,11 +2,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Implementacion } from './implementacion.entity';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 export enum ColumnaKanban {
   POR_HACER = 'por_hacer',
@@ -49,6 +52,10 @@ export class TareaKanban {
     onDelete: 'CASCADE',
   })
   implementacion: Implementacion;
+
+  @ManyToMany(() => Usuario, { eager: false })
+  @JoinTable({ name: 'tarea_responsables' })
+  responsables: Usuario[];
 
   @CreateDateColumn()
   creadoEn: Date;

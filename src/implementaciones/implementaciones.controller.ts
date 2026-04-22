@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { ImplementacionesService } from './implementaciones.service';
 import { CreateImplementacionDto } from './dto/create-implementacion.dto';
-import { CreateTareaKanbanDto, MoverTareaDto } from './dto/create-tarea-kanban.dto';
+import { CreateTareaKanbanDto, MoverTareaDto, UpdateTareaKanbanDto } from './dto/create-tarea-kanban.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -55,6 +55,12 @@ export class ImplementacionesController {
   @Post('tareas')
   crearTarea(@Body() dto: CreateTareaKanbanDto) {
     return this.service.crearTarea(dto);
+  }
+
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
+  @Patch('tareas/:id')
+  actualizarTarea(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateTareaKanbanDto) {
+    return this.service.actualizarTarea(id, dto);
   }
 
   @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
