@@ -38,6 +38,12 @@ export class ProyectosController {
     return this.proyectosService.findComoEncargado(usuario.id);
   }
 
+  @Roles(RolUsuario.ADMIN)
+  @Get('por-cliente/:clienteId')
+  findPorCliente(@Param('clienteId', ParseUUIDPipe) clienteId: string) {
+    return this.proyectosService.findPorCliente(clienteId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string, @UsuarioActual() usuario: Usuario) {
     return this.proyectosService.findOne(id, usuario);
