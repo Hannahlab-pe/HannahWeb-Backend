@@ -33,4 +33,14 @@ export class CreateUsuarioDto {
   @IsString()
   @MaxLength(200)
   empresa?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(15)
+  ruc?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  direccion?: string;
 }

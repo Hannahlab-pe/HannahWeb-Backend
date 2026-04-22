@@ -36,6 +36,12 @@ export class Usuario {
   @Column({ nullable: true, length: 200 })
   empresa: string;
 
+  @Column({ nullable: true, length: 15 })
+  ruc: string;
+
+  @Column({ nullable: true, length: 300 })
+  direccion: string;
+
   @Column({ default: true })
   activo: boolean;
 
