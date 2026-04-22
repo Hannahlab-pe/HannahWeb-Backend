@@ -107,7 +107,8 @@ export class ImplementacionesService {
       implementacion: impl,
       responsables,
     });
-    return this.tareaRepo.save(tarea);
+    const saved = await this.tareaRepo.save(tarea);
+    return this.tareaRepo.findOne({ where: { id: saved.id }, relations: ['responsables'] }) as Promise<TareaKanban>;
   }
 
   async actualizarTarea(id: string, dto: UpdateTareaKanbanDto): Promise<TareaKanban> {
@@ -121,7 +122,7 @@ export class ImplementacionesService {
     if (dto.descripcion !== undefined) tarea.descripcion = dto.descripcion;
     if (dto.prioridad !== undefined) tarea.prioridad = dto.prioridad;
     if (dto.fechaLimite !== undefined) {
-      tarea.fechaLimite = dto.fechaLimite ? new Date(dto.fechaLimite) : null;
+      (tarea as any).fechaLimite = dto.fechaLimite ? new Date(dto.fechaLimite) : null;
     }
     if (dto.responsablesIds !== undefined) {
       tarea.responsables = dto.responsablesIds.length
@@ -129,7 +130,8 @@ export class ImplementacionesService {
         : [];
     }
 
-    return this.tareaRepo.save(tarea);
+    const saved = await this.tareaRepo.save(tarea);
+    return this.tareaRepo.findOne({ where: { id: saved.id }, relations: ['responsables'] }) as Promise<TareaKanban>;
   }
 
   async moverTarea(id: string, dto: MoverTareaDto): Promise<TareaKanban> {

@@ -45,7 +45,7 @@ export class TareaKanban {
   orden: number;
 
   @Column({ type: 'date', nullable: true })
-  fechaLimite: Date;
+  fechaLimite: Date | null;
 
   @ManyToOne(() => Implementacion, (impl) => impl.tareas, {
     nullable: false,
