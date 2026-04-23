@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Ticket, EstadoTicket } from './entities/ticket.entity';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
+import { Proyecto } from '../proyectos/entities/proyecto.entity';
 
 export class ResponderTicketDto {
   respuesta: string;
@@ -14,16 +15,23 @@ export class TicketsService {
   constructor(
     @InjectRepository(Ticket)
     private readonly repo: Repository<Ticket>,
+    @InjectRepository(Proyecto)
+    private readonly proyectoRepo: Repository<Proyecto>,
   ) {}
 
   async crear(dto: CreateTicketDto, cliente: Usuario): Promise<Ticket> {
-    const ticket = this.repo.create({ ...dto, cliente });
+    const { proyectoId, ...rest } = dto;
+    let proyecto: Proyecto | null = null;
+    if (proyectoId) {
+      proyecto = await this.proyectoRepo.findOne({ where: { id: proyectoId } });
+    }
+    const ticket = this.repo.create({ ...rest, cliente, ...(proyecto ? { proyecto } : {}) });
     return this.repo.save(ticket);
   }
 
   findTodos(): Promise<Ticket[]> {
     return this.repo.find({
-      relations: ['cliente'],
+      relations: ['cliente', 'proyecto'],
       order: { creadoEn: 'DESC' },
     });
   }
@@ -31,6 +39,7 @@ export class TicketsService {
   findPorCliente(clienteId: string): Promise<Ticket[]> {
     return this.repo.find({
       where: { cliente: { id: clienteId } },
+      relations: ['proyecto'],
       order: { creadoEn: 'DESC' },
     });
   }
