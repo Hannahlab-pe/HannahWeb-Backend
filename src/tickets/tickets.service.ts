@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { IsString, IsOptional, IsEnum, IsUUID } from 'class-validator';
 import { Ticket, EstadoTicket } from './entities/ticket.entity';
 import { MensajeTicket } from './entities/mensaje-ticket.entity';
 import { CreateTicketDto } from './dto/create-ticket.dto';
@@ -8,18 +9,23 @@ import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
 import { Proyecto } from '../proyectos/entities/proyecto.entity';
 
 export class ResponderTicketDto {
+  @IsString()
   respuesta: string;
 }
 
 export class CambiarEstadoDto {
+  @IsEnum(EstadoTicket)
   estado: EstadoTicket;
 }
 
 export class AsignarTicketDto {
+  @IsOptional()
+  @IsUUID()
   usuarioId: string | null;
 }
 
 export class EnviarMensajeDto {
+  @IsString()
   contenido: string;
 }
 
