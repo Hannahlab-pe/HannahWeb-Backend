@@ -1,5 +1,5 @@
-import { IsString, IsOptional, IsEnum, IsUUID, MaxLength } from 'class-validator';
-import { PrioridadTicket } from '../entities/ticket.entity';
+import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
+import { PrioridadTicket, TipoTicket } from '../entities/ticket.entity';
 
 export class CreateTicketDto {
   @IsString()
@@ -8,6 +8,10 @@ export class CreateTicketDto {
 
   @IsString()
   descripcion: string;
+
+  @IsOptional()
+  @IsEnum(TipoTicket)
+  tipo?: TipoTicket;
 
   @IsOptional()
   @IsEnum(PrioridadTicket)

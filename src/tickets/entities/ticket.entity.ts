@@ -8,6 +8,13 @@ import {
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
+export enum TipoTicket {
+  COMENTARIO = 'comentario',
+  APORTE = 'aporte',
+  INCIDENCIA = 'incidencia',
+  BUG = 'bug',
+}
+
 export enum PrioridadTicket {
   BAJA = 'baja',
   MEDIA = 'media',
@@ -32,6 +39,9 @@ export class Ticket {
 
   @Column({ type: 'text' })
   descripcion: string;
+
+  @Column({ type: 'enum', enum: TipoTicket, default: TipoTicket.COMENTARIO })
+  tipo: TipoTicket;
 
   @Column({ type: 'enum', enum: PrioridadTicket, default: PrioridadTicket.MEDIA })
   prioridad: PrioridadTicket;
