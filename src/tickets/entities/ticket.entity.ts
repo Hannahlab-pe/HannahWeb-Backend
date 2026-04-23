@@ -1,13 +1,10 @@
 import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  Column, CreateDateColumn, Entity,
+  ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn,
 } from 'typeorm';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { Proyecto } from '../../proyectos/entities/proyecto.entity';
+import { MensajeTicket } from './mensaje-ticket.entity';
 
 export enum TipoTicket {
   COMENTARIO = 'comentario',
@@ -58,6 +55,12 @@ export class Ticket {
 
   @ManyToOne(() => Proyecto, { eager: false, nullable: true, onDelete: 'SET NULL' })
   proyecto: Proyecto;
+
+  @ManyToOne(() => Usuario, { eager: false, nullable: true, onDelete: 'SET NULL' })
+  asignadoA: Usuario | null;
+
+  @OneToMany(() => MensajeTicket, (m) => m.ticket)
+  mensajes: MensajeTicket[];
 
   @CreateDateColumn()
   creadoEn: Date;

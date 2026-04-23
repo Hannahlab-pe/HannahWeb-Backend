@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ticket, EstadoTicket } from './entities/ticket.entity';
+import { MensajeTicket } from './entities/mensaje-ticket.entity';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
 import { Proyecto } from '../proyectos/entities/proyecto.entity';
@@ -10,13 +11,29 @@ export class ResponderTicketDto {
   respuesta: string;
 }
 
+export class CambiarEstadoDto {
+  estado: EstadoTicket;
+}
+
+export class AsignarTicketDto {
+  usuarioId: string | null;
+}
+
+export class EnviarMensajeDto {
+  contenido: string;
+}
+
 @Injectable()
 export class TicketsService {
   constructor(
     @InjectRepository(Ticket)
     private readonly repo: Repository<Ticket>,
+    @InjectRepository(MensajeTicket)
+    private readonly mensajeRepo: Repository<MensajeTicket>,
     @InjectRepository(Proyecto)
     private readonly proyectoRepo: Repository<Proyecto>,
+    @InjectRepository(Usuario)
+    private readonly usuarioRepo: Repository<Usuario>,
   ) {}
 
   async crear(dto: CreateTicketDto, cliente: Usuario): Promise<Ticket> {
@@ -31,7 +48,7 @@ export class TicketsService {
 
   findTodos(): Promise<Ticket[]> {
     return this.repo.find({
-      relations: ['cliente', 'proyecto'],
+      relations: ['cliente', 'proyecto', 'asignadoA'],
       order: { creadoEn: 'DESC' },
     });
   }
@@ -39,20 +56,77 @@ export class TicketsService {
   findPorCliente(clienteId: string): Promise<Ticket[]> {
     return this.repo.find({
       where: { cliente: { id: clienteId } },
-      relations: ['proyecto'],
+      relations: ['proyecto', 'asignadoA'],
       order: { creadoEn: 'DESC' },
     });
   }
 
   async findOne(id: string, usuario: Usuario): Promise<Ticket> {
-    const ticket = await this.repo.findOne({ where: { id }, relations: ['cliente'] });
+    const ticket = await this.repo.findOne({
+      where: { id },
+      relations: ['cliente', 'proyecto', 'asignadoA'],
+    });
     if (!ticket) throw new NotFoundException('Ticket no encontrado');
-
     if (usuario.rol === RolUsuario.CLIENTE && ticket.cliente.id !== usuario.id) {
       throw new ForbiddenException('No tienes acceso a este ticket');
     }
     return ticket;
   }
+
+  // ── Mensajes ────────────────────────────────────────────────────
+
+  async getMensajes(ticketId: string, usuario: Usuario): Promise<MensajeTicket[]> {
+    const ticket = await this.repo.findOne({ where: { id: ticketId }, relations: ['cliente'] });
+    if (!ticket) throw new NotFoundException('Ticket no encontrado');
+    if (usuario.rol === RolUsuario.CLIENTE && ticket.cliente.id !== usuario.id) {
+      throw new ForbiddenException('No tienes acceso a este ticket');
+    }
+    return this.mensajeRepo.find({
+      where: { ticket: { id: ticketId } },
+      relations: ['autor'],
+      order: { creadoEn: 'ASC' },
+    });
+  }
+
+  async enviarMensaje(ticketId: string, dto: EnviarMensajeDto, autor: Usuario): Promise<MensajeTicket> {
+    const ticket = await this.repo.findOne({ where: { id: ticketId }, relations: ['cliente'] });
+    if (!ticket) throw new NotFoundException('Ticket no encontrado');
+    if (autor.rol === RolUsuario.CLIENTE && ticket.cliente.id !== autor.id) {
+      throw new ForbiddenException('No tienes acceso a este ticket');
+    }
+    // Si el ticket estaba abierto y el equipo responde, pasarlo a en_progreso
+    if (autor.rol !== RolUsuario.CLIENTE && ticket.estado === EstadoTicket.ABIERTO) {
+      ticket.estado = EstadoTicket.EN_PROGRESO;
+      await this.repo.save(ticket);
+    }
+    const msg = this.mensajeRepo.create({ contenido: dto.contenido, autor, ticket });
+    const saved = await this.mensajeRepo.save(msg);
+    return this.mensajeRepo.findOne({ where: { id: saved.id }, relations: ['autor'] }) as Promise<MensajeTicket>;
+  }
+
+  // ── Estado y asignación ─────────────────────────────────────────
+
+  async cambiarEstado(id: string, dto: CambiarEstadoDto): Promise<Ticket> {
+    const ticket = await this.repo.findOne({ where: { id }, relations: ['cliente', 'proyecto', 'asignadoA'] });
+    if (!ticket) throw new NotFoundException('Ticket no encontrado');
+    ticket.estado = dto.estado;
+    return this.repo.save(ticket);
+  }
+
+  async asignar(id: string, dto: AsignarTicketDto): Promise<Ticket> {
+    const ticket = await this.repo.findOne({ where: { id }, relations: ['cliente', 'proyecto', 'asignadoA'] });
+    if (!ticket) throw new NotFoundException('Ticket no encontrado');
+    if (dto.usuarioId) {
+      const usuario = await this.usuarioRepo.findOne({ where: { id: dto.usuarioId } });
+      if (!usuario) throw new NotFoundException('Usuario no encontrado');
+      ticket.asignadoA = usuario;
+    } else {
+      ticket.asignadoA = null;
+    }
+    return this.repo.save(ticket);
+  }
+
+  // ── Mantener compatibilidad con endpoints legacy ─────────────────
 
   async responder(id: string, dto: ResponderTicketDto): Promise<Ticket> {
     const ticket = await this.repo.findOne({ where: { id } });
@@ -69,4 +143,3 @@ export class TicketsService {
     return this.repo.save(ticket);
   }
 }
-
