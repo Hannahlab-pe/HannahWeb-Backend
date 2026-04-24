@@ -38,8 +38,11 @@ export class ReunionesService {
   async findOne(id: string, usuario: Usuario): Promise<Reunion> {
     const reunion = await this.repo.findOne({ where: { id }, relations: ['cliente', 'proyecto'] });
     if (!reunion) throw new NotFoundException('Reunión no encontrada');
-    if (usuario.rol === RolUsuario.CLIENTE && reunion.cliente.id !== usuario.id) {
-      throw new ForbiddenException('No tienes acceso a esta reunión');
+    if (usuario.rol === RolUsuario.CLIENTE) {
+      const effectiveId = (usuario as any).clientePrincipal?.id ?? usuario.id;
+      if (reunion.cliente.id !== effectiveId) {
+        throw new ForbiddenException('No tienes acceso a esta reunión');
+      }
     }
     return reunion;
   }

@@ -12,13 +12,13 @@ import { UsuarioActual } from '../auth/decorators/usuario-actual.decorator';
 export class ReunionesController {
   constructor(private readonly reunionesService: ReunionesService) {}
 
-  @Roles(RolUsuario.ADMIN)
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Post()
   crear(@Body() dto: CreateReunionDto) {
     return this.reunionesService.crear(dto);
   }
 
-  @Roles(RolUsuario.ADMIN)
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Get()
   findTodas() {
     return this.reunionesService.findTodas();
@@ -26,7 +26,8 @@ export class ReunionesController {
 
   @Get('mis-reuniones')
   findMias(@UsuarioActual() usuario: Usuario) {
-    return this.reunionesService.findPorCliente(usuario.id);
+    const clienteId = (usuario as any).clientePrincipal?.id ?? usuario.id;
+    return this.reunionesService.findPorCliente(clienteId);
   }
 
   @Get(':id')
@@ -34,7 +35,7 @@ export class ReunionesController {
     return this.reunionesService.findOne(id, usuario);
   }
 
-  @Roles(RolUsuario.ADMIN)
+  @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Delete(':id')
   eliminar(@Param('id', ParseUUIDPipe) id: string) {
     return this.reunionesService.eliminar(id);
