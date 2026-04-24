@@ -29,7 +29,8 @@ export class ProyectosController {
 
   @Get('mis-proyectos')
   findMios(@UsuarioActual() usuario: Usuario) {
-    return this.proyectosService.findPorCliente(usuario.id);
+    const clienteId = usuario.clientePrincipal?.id ?? usuario.id;
+    return this.proyectosService.findPorCliente(clienteId);
   }
 
   @Roles(RolUsuario.SUBADMIN)

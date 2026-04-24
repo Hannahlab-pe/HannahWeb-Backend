@@ -73,8 +73,11 @@ export class TicketsService {
       relations: ['cliente', 'proyecto', 'asignadoA'],
     });
     if (!ticket) throw new NotFoundException('Ticket no encontrado');
-    if (usuario.rol === RolUsuario.CLIENTE && ticket.cliente.id !== usuario.id) {
-      throw new ForbiddenException('No tienes acceso a este ticket');
+    if (usuario.rol === RolUsuario.CLIENTE) {
+      const clienteEfectivoId = (usuario as any).clientePrincipal?.id ?? usuario.id;
+      if (ticket.cliente.id !== clienteEfectivoId) {
+        throw new ForbiddenException('No tienes acceso a este ticket');
+      }
     }
     return ticket;
   }
@@ -84,8 +87,11 @@ export class TicketsService {
   async getMensajes(ticketId: string, usuario: Usuario): Promise<MensajeTicket[]> {
     const ticket = await this.repo.findOne({ where: { id: ticketId }, relations: ['cliente'] });
     if (!ticket) throw new NotFoundException('Ticket no encontrado');
-    if (usuario.rol === RolUsuario.CLIENTE && ticket.cliente.id !== usuario.id) {
-      throw new ForbiddenException('No tienes acceso a este ticket');
+    if (usuario.rol === RolUsuario.CLIENTE) {
+      const clienteEfectivoId = (usuario as any).clientePrincipal?.id ?? usuario.id;
+      if (ticket.cliente.id !== clienteEfectivoId) {
+        throw new ForbiddenException('No tienes acceso a este ticket');
+      }
     }
     return this.mensajeRepo.find({
       where: { ticket: { id: ticketId } },
@@ -97,8 +103,11 @@ export class TicketsService {
   async enviarMensaje(ticketId: string, dto: EnviarMensajeDto, autor: Usuario): Promise<MensajeTicket> {
     const ticket = await this.repo.findOne({ where: { id: ticketId }, relations: ['cliente'] });
     if (!ticket) throw new NotFoundException('Ticket no encontrado');
-    if (autor.rol === RolUsuario.CLIENTE && ticket.cliente.id !== autor.id) {
-      throw new ForbiddenException('No tienes acceso a este ticket');
+    if (autor.rol === RolUsuario.CLIENTE) {
+      const clienteEfectivoId = (autor as any).clientePrincipal?.id ?? autor.id;
+      if (ticket.cliente.id !== clienteEfectivoId) {
+        throw new ForbiddenException('No tienes acceso a este ticket');
+      }
     }
     // Si el ticket estaba abierto y el equipo responde, pasarlo a en_progreso
     if (autor.rol !== RolUsuario.CLIENTE && ticket.estado === EstadoTicket.ABIERTO) {

@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { Usuario } from './entities/usuario.entity';
+import { Usuario, RolUsuario } from './entities/usuario.entity';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 
 @Injectable()
@@ -23,7 +23,19 @@ export class UsuariosService {
     }
 
     const hash = await bcrypt.hash(dto.password, 12);
-    const usuario = this.repo.create({ ...dto, password: hash });
+    const { clientePrincipalId, ...rest } = dto;
+
+    let clientePrincipal: Usuario | null = null;
+    if (clientePrincipalId) {
+      clientePrincipal = await this.repo.findOne({ where: { id: clientePrincipalId } });
+      if (!clientePrincipal) throw new NotFoundException('Cliente principal no encontrado');
+    }
+
+    const usuario = this.repo.create({
+      ...rest,
+      password: hash,
+      ...(clientePrincipal ? { clientePrincipal } : {}),
+    });
     const guardado = await this.repo.save(usuario);
 
     const { password: _pw, ...resultado } = guardado;
@@ -46,6 +58,39 @@ export class UsuariosService {
     return this.repo.findOne({ where: { email } });
   }
 
+  // ── Miembros del cliente ────────────────────────────────────────
+
+  findMiembrosByCliente(clienteId: string): Promise<Usuario[]> {
+    return this.repo.find({
+      where: { clientePrincipal: { id: clienteId }, rol: RolUsuario.CLIENTE },
+      order: { creadoEn: 'ASC' },
+    });
+  }
+
+  async crearMiembro(
+    clienteId: string,
+    data: { nombre: string; email: string; password: string; telefono?: string },
+  ): Promise<Omit<Usuario, 'password'>> {
+    return this.crear({
+      ...data,
+      rol: RolUsuario.CLIENTE,
+      clientePrincipalId: clienteId,
+    });
+  }
+
+  async eliminarMiembro(miembroId: string): Promise<void> {
+    const miembro = await this.repo.findOne({
+      where: { id: miembroId },
+      relations: ['clientePrincipal'],
+    });
+    if (!miembro || !miembro.clientePrincipal) {
+      throw new NotFoundException('Miembro no encontrado');
+    }
+    await this.repo.remove(miembro);
+  }
+
+  // ── Activar / desactivar ────────────────────────────────────────
+
   async desactivar(id: string): Promise<void> {
     const usuario = await this.findOne(id);
     usuario.activo = false;
@@ -60,4 +105,3 @@ export class UsuariosService {
     return resultado;
   }
 }
-

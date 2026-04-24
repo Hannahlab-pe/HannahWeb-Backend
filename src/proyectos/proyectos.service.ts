@@ -75,8 +75,11 @@ export class ProyectosService {
 
     if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
 
-    if (usuario.rol === RolUsuario.CLIENTE && proyecto.cliente.id !== usuario.id) {
-      throw new NotFoundException('Proyecto no encontrado');
+    if (usuario.rol === RolUsuario.CLIENTE) {
+      const clienteEfectivoId = (usuario as any).clientePrincipal?.id ?? usuario.id;
+      if (proyecto.cliente.id !== clienteEfectivoId) {
+        throw new NotFoundException('Proyecto no encontrado');
+      }
     }
 
     return proyecto;

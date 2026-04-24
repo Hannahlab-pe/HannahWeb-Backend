@@ -2,6 +2,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -44,6 +46,14 @@ export class Usuario {
 
   @Column({ default: true })
   activo: boolean;
+
+  // ── Miembros del cliente ─────────────────────────────────────────
+  @ManyToOne(() => Usuario, (u) => u.miembros, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'clientePrincipalId' })
+  clientePrincipal: Usuario | null;
+
+  @OneToMany(() => Usuario, (u) => u.clientePrincipal)
+  miembros: Usuario[];
 
   @CreateDateColumn()
   creadoEn: Date;

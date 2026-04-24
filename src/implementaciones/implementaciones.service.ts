@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Implementacion } from './entities/implementacion.entity';
-import { TareaKanban } from './entities/tarea-kanban.entity';
+import { TareaKanban, ColumnaKanban } from './entities/tarea-kanban.entity';
 import { CreateImplementacionDto } from './dto/create-implementacion.dto';
 import { CreateTareaKanbanDto, MoverTareaDto, UpdateTareaKanbanDto } from './dto/create-tarea-kanban.dto';
 import { Proyecto } from '../proyectos/entities/proyecto.entity';
@@ -20,6 +20,38 @@ export class ImplementacionesService {
     @InjectRepository(Usuario)
     private readonly usuarioRepo: Repository<Usuario>,
   ) {}
+
+  // ── Progreso automático ──────────────────────────────────────────
+
+  private async recalcularProgreso(implementacionId: string): Promise<void> {
+    const impl = await this.implRepo.findOne({
+      where: { id: implementacionId },
+      relations: ['proyecto'],
+    });
+    if (!impl?.proyecto) return;
+
+    const proyectoId = impl.proyecto.id;
+
+    // Obtener todas las implementaciones del proyecto
+    const impls = await this.implRepo.find({
+      where: { proyecto: { id: proyectoId } },
+      select: ['id'],
+    });
+    const implIds = impls.map((i) => i.id);
+    if (!implIds.length) return;
+
+    const total = await this.tareaRepo.count({
+      where: { implementacion: { id: In(implIds) } },
+    });
+
+    const completadas = await this.tareaRepo.count({
+      where: { implementacion: { id: In(implIds) }, columna: ColumnaKanban.COMPLETADO },
+    });
+
+    const progreso = total > 0 ? Math.round((completadas / total) * 100) : 0;
+
+    await this.proyectoRepo.update(proyectoId, { progreso });
+  }
 
   // ── Implementaciones ─────────────────────────────────────────────
 
@@ -108,13 +140,14 @@ export class ImplementacionesService {
       responsables,
     });
     const saved = await this.tareaRepo.save(tarea);
+    await this.recalcularProgreso(dto.implementacionId);
     return this.tareaRepo.findOne({ where: { id: saved.id }, relations: ['responsables'] }) as Promise<TareaKanban>;
   }
 
   async actualizarTarea(id: string, dto: UpdateTareaKanbanDto): Promise<TareaKanban> {
     const tarea = await this.tareaRepo.findOne({
       where: { id },
-      relations: ['responsables'],
+      relations: ['responsables', 'implementacion'],
     });
     if (!tarea) throw new NotFoundException('Tarea no encontrada');
 
@@ -135,17 +168,26 @@ export class ImplementacionesService {
   }
 
   async moverTarea(id: string, dto: MoverTareaDto): Promise<TareaKanban> {
-    const tarea = await this.tareaRepo.findOne({ where: { id } });
+    const tarea = await this.tareaRepo.findOne({
+      where: { id },
+      relations: ['implementacion'],
+    });
     if (!tarea) throw new NotFoundException('Tarea no encontrada');
     tarea.columna = dto.columna;
     if (dto.orden !== undefined) tarea.orden = dto.orden;
-    return this.tareaRepo.save(tarea);
+    const saved = await this.tareaRepo.save(tarea);
+    await this.recalcularProgreso(tarea.implementacion.id);
+    return saved;
   }
 
   async eliminarTarea(id: string): Promise<void> {
-    const tarea = await this.tareaRepo.findOne({ where: { id } });
+    const tarea = await this.tareaRepo.findOne({
+      where: { id },
+      relations: ['implementacion'],
+    });
     if (!tarea) throw new NotFoundException('Tarea no encontrada');
+    const implId = tarea.implementacion.id;
     await this.tareaRepo.remove(tarea);
+    await this.recalcularProgreso(implId);
   }
 }
-

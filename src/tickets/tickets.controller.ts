@@ -23,7 +23,9 @@ export class TicketsController {
   @Roles(RolUsuario.CLIENTE, RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Post()
   crear(@Body() dto: CreateTicketDto, @UsuarioActual() usuario: Usuario) {
-    return this.ticketsService.crear(dto, usuario);
+    // El miembro crea el ticket como su cliente principal
+    const clienteEfectivo = (usuario as any).clientePrincipal ?? usuario;
+    return this.ticketsService.crear(dto, clienteEfectivo);
   }
 
   @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
@@ -34,7 +36,8 @@ export class TicketsController {
 
   @Get('mis-tickets')
   findMios(@UsuarioActual() usuario: Usuario) {
-    return this.ticketsService.findPorCliente(usuario.id);
+    const clienteId = (usuario as any).clientePrincipal?.id ?? usuario.id;
+    return this.ticketsService.findPorCliente(clienteId);
   }
 
   @Get(':id')

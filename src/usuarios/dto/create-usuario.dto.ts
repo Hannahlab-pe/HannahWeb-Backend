@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsUUID,
   MinLength,
   MaxLength,
 } from 'class-validator';
@@ -43,4 +44,8 @@ export class CreateUsuarioDto {
   @IsString()
   @MaxLength(300)
   direccion?: string;
+
+  @IsOptional()
+  @IsUUID()
+  clientePrincipalId?: string;
 }

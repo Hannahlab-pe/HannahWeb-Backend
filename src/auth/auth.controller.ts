@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
+import { AuthService, ActualizarPerfilDto, CambiarPasswordDto } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsuarioActual } from './decorators/usuario-actual.decorator';
@@ -18,5 +18,23 @@ export class AuthController {
   @Get('perfil')
   perfil(@UsuarioActual() usuario: Usuario) {
     return this.authService.perfil(usuario);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('mi-equipo')
+  miEquipo(@UsuarioActual() usuario: Usuario) {
+    return this.authService.miEquipo(usuario);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('perfil')
+  actualizarPerfil(@UsuarioActual() usuario: Usuario, @Body() dto: ActualizarPerfilDto) {
+    return this.authService.actualizarPerfil(usuario, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('cambiar-password')
+  cambiarPassword(@UsuarioActual() usuario: Usuario, @Body() dto: CambiarPasswordDto) {
+    return this.authService.cambiarPassword(usuario, dto);
   }
 }

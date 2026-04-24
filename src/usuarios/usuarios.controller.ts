@@ -6,12 +6,30 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolUsuario } from './entities/usuario.entity';
 import { MailService } from '../mail/mail.service';
-import { IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 class BienvenidaDto {
   @IsString()
   @MinLength(1)
   password: string;
+}
+
+class CreateMiembroDto {
+  @IsString()
+  @MaxLength(100)
+  nombre: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  telefono?: string;
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -63,5 +81,27 @@ export class UsuariosController {
       empresa: usuario.empresa,
     });
     return { ok: true };
+  }
+
+  // ── Miembros del cliente ────────────────────────────────────────
+
+  @Get(':id/miembros')
+  getMiembros(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usuariosService.findMiembrosByCliente(id);
+  }
+
+  @Post(':id/miembros')
+  crearMiembro(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateMiembroDto,
+  ) {
+    return this.usuariosService.crearMiembro(id, dto);
+  }
+
+  @Delete(':clienteId/miembros/:miembroId')
+  eliminarMiembro(
+    @Param('miembroId', ParseUUIDPipe) miembroId: string,
+  ) {
+    return this.usuariosService.eliminarMiembro(miembroId);
   }
 }
