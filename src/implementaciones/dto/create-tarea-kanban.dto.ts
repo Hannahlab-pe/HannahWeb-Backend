@@ -37,6 +37,10 @@ export class CreateTareaKanbanDto {
 
   @IsOptional()
   @IsDateString()
+  fechaInicio?: string;
+
+  @IsOptional()
+  @IsDateString()
   fechaLimite?: string;
 
   @IsOptional()
@@ -61,6 +65,10 @@ export class UpdateTareaKanbanDto {
   @IsOptional()
   @IsEnum(PrioridadTarea)
   prioridad?: PrioridadTarea;
+
+  @IsOptional()
+  @IsDateString()
+  fechaInicio?: string;
 
   @IsOptional()
   @IsDateString()

@@ -135,6 +135,7 @@ export class ImplementacionesService {
       columna: dto.columna,
       prioridad: dto.prioridad,
       orden: dto.orden ?? 0,
+      fechaInicio: dto.fechaInicio ? new Date(dto.fechaInicio) : undefined,
       fechaLimite: dto.fechaLimite ? new Date(dto.fechaLimite) : undefined,
       implementacion: impl,
       responsables,
@@ -154,6 +155,9 @@ export class ImplementacionesService {
     if (dto.titulo !== undefined) tarea.titulo = dto.titulo;
     if (dto.descripcion !== undefined) tarea.descripcion = dto.descripcion;
     if (dto.prioridad !== undefined) tarea.prioridad = dto.prioridad;
+    if (dto.fechaInicio !== undefined) {
+      (tarea as any).fechaInicio = dto.fechaInicio ? new Date(dto.fechaInicio) : null;
+    }
     if (dto.fechaLimite !== undefined) {
       (tarea as any).fechaLimite = dto.fechaLimite ? new Date(dto.fechaLimite) : null;
     }
