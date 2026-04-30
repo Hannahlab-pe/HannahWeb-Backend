@@ -7,6 +7,7 @@ import { CreateImplementacionDto } from './dto/create-implementacion.dto';
 import { CreateTareaKanbanDto, MoverTareaDto, UpdateTareaKanbanDto } from './dto/create-tarea-kanban.dto';
 import { Proyecto } from '../proyectos/entities/proyecto.entity';
 import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
+import { Sprint } from '../sprints/entities/sprint.entity';
 
 @Injectable()
 export class ImplementacionesService {
@@ -19,6 +20,8 @@ export class ImplementacionesService {
     private readonly proyectoRepo: Repository<Proyecto>,
     @InjectRepository(Usuario)
     private readonly usuarioRepo: Repository<Usuario>,
+    @InjectRepository(Sprint)
+    private readonly sprintRepo: Repository<Sprint>,
   ) {}
 
   // ── Progreso automático ──────────────────────────────────────────
@@ -82,7 +85,7 @@ export class ImplementacionesService {
 
     return this.implRepo.find({
       where: { proyecto: { id: proyectoId } },
-      relations: ['tareas', 'tareas.responsables'],
+      relations: ['tareas', 'tareas.responsables', 'tareas.sprint'],
       order: { creadoEn: 'ASC' },
     });
   }
@@ -148,7 +151,7 @@ export class ImplementacionesService {
   async actualizarTarea(id: string, dto: UpdateTareaKanbanDto): Promise<TareaKanban> {
     const tarea = await this.tareaRepo.findOne({
       where: { id },
-      relations: ['responsables', 'implementacion'],
+      relations: ['responsables', 'implementacion', 'sprint'],
     });
     if (!tarea) throw new NotFoundException('Tarea no encontrada');
 
@@ -166,9 +169,14 @@ export class ImplementacionesService {
         ? await this.usuarioRepo.findBy({ id: In(dto.responsablesIds) })
         : [];
     }
+    if ('sprintId' in dto) {
+      tarea.sprint = dto.sprintId
+        ? (await this.sprintRepo.findOne({ where: { id: dto.sprintId } })) ?? null
+        : null;
+    }
 
     const saved = await this.tareaRepo.save(tarea);
-    return this.tareaRepo.findOne({ where: { id: saved.id }, relations: ['responsables'] }) as Promise<TareaKanban>;
+    return this.tareaRepo.findOne({ where: { id: saved.id }, relations: ['responsables', 'sprint'] }) as Promise<TareaKanban>;
   }
 
   async moverTarea(id: string, dto: MoverTareaDto): Promise<TareaKanban> {

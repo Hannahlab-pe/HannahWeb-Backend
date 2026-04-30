@@ -78,6 +78,11 @@ export class UpdateTareaKanbanDto {
   @IsArray()
   @IsUUID('all', { each: true })
   responsablesIds?: string[];
+
+  // null = quitar del sprint; undefined = no tocar
+  @IsOptional()
+  @IsUUID()
+  sprintId?: string | null;
 }
 
 export class MoverTareaDto {

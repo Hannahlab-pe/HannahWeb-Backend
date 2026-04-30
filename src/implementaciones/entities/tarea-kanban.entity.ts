@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Implementacion } from './implementacion.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { Sprint } from '../../sprints/entities/sprint.entity';
 
 export enum ColumnaKanban {
   POR_HACER = 'por_hacer',
@@ -49,6 +50,9 @@ export class TareaKanban {
 
   @Column({ type: 'date', nullable: true })
   fechaLimite: Date | null;
+
+  @ManyToOne(() => Sprint, (s) => s.tareas, { nullable: true, onDelete: 'SET NULL', eager: false })
+  sprint: Sprint | null;
 
   @ManyToOne(() => Implementacion, (impl) => impl.tareas, {
     nullable: false,

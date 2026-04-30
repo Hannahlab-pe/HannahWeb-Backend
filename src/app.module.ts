@@ -12,6 +12,7 @@ import { ReunionesModule } from './reuniones/reuniones.module';
 import { DocumentosModule } from './documentos/documentos.module';
 import { CommonModule } from './common/common.module';
 import { ImplementacionesModule } from './implementaciones/implementaciones.module';
+import { SprintsModule } from './sprints/sprints.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { ImplementacionesModule } from './implementaciones/implementaciones.modu
     DocumentosModule,
     CommonModule,
     ImplementacionesModule,
+    SprintsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
