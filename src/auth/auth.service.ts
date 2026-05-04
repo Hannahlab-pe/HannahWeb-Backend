@@ -3,9 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { IsString, MinLength, IsOptional } from 'class-validator';
+import * as crypto from 'crypto';
+import { IsString, MinLength, IsEmail, IsOptional } from 'class-validator';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { LoginDto } from './dto/login.dto';
+import { MailService } from '../mail/mail.service';
 
 export class ActualizarPerfilDto {
   @IsString()
@@ -31,12 +33,27 @@ export class CambiarPasswordDto {
   passwordNueva: string;
 }
 
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  token: string;
+
+  @IsString()
+  @MinLength(6)
+  password: string;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Usuario)
     private readonly usuariosRepo: Repository<Usuario>,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async login(loginDto: LoginDto) {
@@ -103,6 +120,42 @@ export class AuthService {
     if (!valido) throw new BadRequestException('La contraseña actual es incorrecta');
     conPassword!.password = await bcrypt.hash(dto.passwordNueva, 12);
     await this.usuariosRepo.save(conPassword!);
+    return { ok: true };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ ok: boolean }> {
+    const usuario = await this.usuariosRepo.findOne({ where: { email: dto.email, activo: true } });
+    if (!usuario) return { ok: true }; // no revelar si el email existe
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await this.usuariosRepo.update(usuario.id, {
+      resetToken: token,
+      resetTokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hora
+    });
+
+    await this.mailService.enviarResetPassword({
+      nombre: usuario.nombre,
+      email: usuario.email,
+      token,
+    });
+    return { ok: true };
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<{ ok: boolean }> {
+    const usuario = await this.usuariosRepo.findOne({
+      where: { resetToken: dto.token },
+      select: ['id', 'resetToken', 'resetTokenExpiresAt', 'password'],
+    });
+
+    if (!usuario || !usuario.resetTokenExpiresAt || usuario.resetTokenExpiresAt < new Date()) {
+      throw new BadRequestException('El enlace es inválido o ha expirado');
+    }
+
+    await this.usuariosRepo.update(usuario.id, {
+      password: await bcrypt.hash(dto.password, 12),
+      resetToken: null,
+      resetTokenExpiresAt: null,
+    });
     return { ok: true };
   }
 }

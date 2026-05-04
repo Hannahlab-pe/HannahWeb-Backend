@@ -47,6 +47,12 @@ export class Usuario {
   @Column({ default: true })
   activo: boolean;
 
+  @Column({ nullable: true, select: false })
+  resetToken: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  resetTokenExpiresAt: Date | null;
+
   // ── Miembros del cliente ─────────────────────────────────────────
   @ManyToOne(() => Usuario, (u) => u.miembros, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'clientePrincipalId' })

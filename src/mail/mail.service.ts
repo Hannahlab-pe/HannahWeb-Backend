@@ -19,6 +19,62 @@ export class MailService {
     });
   }
 
+  async enviarResetPassword(opts: { nombre: string; email: string; token: string }): Promise<void> {
+    const resetUrl =
+      this.config.get<string>('FRONTEND_URL', 'https://www.hannahlab.com') +
+      `/login/nueva-password?token=${opts.token}`;
+    const fromName  = this.config.get<string>('MAIL_FROM_NAME', 'HannahLab');
+    const fromEmail = this.config.get<string>('MAIL_USER');
+
+    const html = `
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+        <tr><td style="background:#111111;padding:28px 40px;text-align:center;">
+          <span style="font-size:22px;font-weight:800;color:#ffffff;">Hannah<span style="color:#4A8B00;">Lab</span></span>
+        </td></tr>
+        <tr><td style="padding:40px 40px 32px;">
+          <h1 style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Recupera tu contraseña</h1>
+          <p style="font-size:14px;color:#6b7280;margin:0 0 28px;line-height:1.6;">
+            Hola <strong>${opts.nombre.split(' ')[0]}</strong>, recibimos una solicitud para restablecer la contraseña de tu cuenta.<br/>
+            Este enlace es válido por <strong>1 hora</strong>. Si no lo solicitaste, ignora este correo.
+          </p>
+          <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            <tr><td style="background:#4A8B00;border-radius:10px;">
+              <a href="${resetUrl}" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">
+                Restablecer contraseña →
+              </a>
+            </td></tr>
+          </table>
+          <p style="font-size:12px;color:#9ca3af;margin:0;line-height:1.5;">
+            O copia este enlace en tu navegador:<br/>
+            <a href="${resetUrl}" style="color:#4A8B00;word-break:break-all;">${resetUrl}</a>
+          </p>
+        </td></tr>
+        <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
+          <p style="font-size:11px;color:#9ca3af;margin:0;">© ${new Date().getFullYear()} HannahLab · Lima, Perú 🇵🇪</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+    try {
+      await this.transporter.sendMail({
+        from: `"${fromName}" <${fromEmail}>`,
+        to: opts.email,
+        subject: 'Recupera tu contraseña · HannahLab',
+        html,
+      });
+      this.logger.log(`Email de reset enviado a ${opts.email}`);
+    } catch (err) {
+      this.logger.error(`Error enviando reset a ${opts.email}: ${err.message}`);
+      throw new Error('No se pudo enviar el correo. Verifica la configuración SMTP.');
+    }
+  }
+
   async enviarBienvenida(opts: {
     nombre: string;
     email: string;
