@@ -26,7 +26,8 @@ export class DocumentosController {
 
   @Get('mis-documentos')
   findMios(@UsuarioActual() usuario: Usuario) {
-    return this.documentosService.findPorCliente(usuario.id);
+    const clienteId = (usuario as any).clientePrincipal?.id ?? usuario.id;
+    return this.documentosService.findPorCliente(clienteId);
   }
 
   @Get(':id')

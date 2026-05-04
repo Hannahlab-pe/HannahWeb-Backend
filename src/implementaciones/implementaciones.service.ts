@@ -79,7 +79,8 @@ export class ImplementacionesService {
     });
     if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
 
-    if (usuario.rol === RolUsuario.CLIENTE && proyecto.cliente.id !== usuario.id) {
+    const clienteEfectivoId = (usuario as any).clientePrincipal?.id ?? usuario.id;
+    if (usuario.rol === RolUsuario.CLIENTE && proyecto.cliente.id !== clienteEfectivoId) {
       throw new ForbiddenException('No tienes acceso a este proyecto');
     }
 
@@ -97,7 +98,8 @@ export class ImplementacionesService {
     });
     if (!impl) throw new NotFoundException('Implementación no encontrada');
 
-    if (usuario.rol === RolUsuario.CLIENTE && impl.proyecto.cliente.id !== usuario.id) {
+    const clienteEfectivoId = (usuario as any).clientePrincipal?.id ?? usuario.id;
+    if (usuario.rol === RolUsuario.CLIENTE && impl.proyecto.cliente.id !== clienteEfectivoId) {
       throw new ForbiddenException('No tienes acceso a esta implementación');
     }
 

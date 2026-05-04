@@ -37,7 +37,8 @@ export class DocumentosService {
   async findOne(id: string, usuario: Usuario): Promise<Documento> {
     const doc = await this.repo.findOne({ where: { id }, relations: ['cliente', 'proyecto'] });
     if (!doc) throw new NotFoundException('Documento no encontrado');
-    if (usuario.rol === RolUsuario.CLIENTE && doc.cliente.id !== usuario.id) {
+    const clienteEfectivoId = (usuario as any).clientePrincipal?.id ?? usuario.id;
+    if (usuario.rol === RolUsuario.CLIENTE && doc.cliente.id !== clienteEfectivoId) {
       throw new ForbiddenException('No tienes acceso a este documento');
     }
     return doc;
