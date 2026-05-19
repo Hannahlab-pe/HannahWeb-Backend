@@ -47,7 +47,7 @@ export class Usuario {
   @Column({ default: true })
   activo: boolean;
 
-  @Column({ nullable: true, select: false })
+  @Column({ type: 'varchar', nullable: true, select: false })
   resetToken: string | null;
 
   @Column({ type: 'timestamptz', nullable: true })
