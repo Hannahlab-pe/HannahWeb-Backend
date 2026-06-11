@@ -14,7 +14,7 @@ export class UsuariosService {
   constructor(
     @InjectRepository(Usuario)
     private readonly repo: Repository<Usuario>,
-  ) {}
+  ) { }
 
   async crear(dto: CreateUsuarioDto): Promise<Omit<Usuario, 'password'>> {
     const existe = await this.repo.findOne({ where: { email: dto.email } });
@@ -87,6 +87,36 @@ export class UsuariosService {
       throw new NotFoundException('Miembro no encontrado');
     }
     await this.repo.remove(miembro);
+  }
+
+  async actualizarMiembro(
+    miembroId: string,
+    data: { nombre?: string; email?: string; password?: string; telefono?: string },
+  ): Promise<Omit<Usuario, 'password'>> {
+    const miembro = await this.repo.findOne({
+      where: { id: miembroId },
+      relations: ['clientePrincipal'],
+    });
+    if (!miembro || !miembro.clientePrincipal) {
+      throw new NotFoundException('Miembro no encontrado');
+    }
+
+    if (data.nombre) miembro.nombre = data.nombre;
+    if (data.email) {
+      const existe = await this.repo.findOne({ where: { email: data.email } });
+      if (existe && existe.id !== miembroId) {
+        throw new ConflictException('Ya existe un usuario con ese email');
+      }
+      miembro.email = data.email;
+    }
+    if (data.password) {
+      miembro.password = await bcrypt.hash(data.password, 12);
+    }
+    if (data.telefono !== undefined) miembro.telefono = data.telefono;
+
+    const guardado = await this.repo.save(miembro);
+    const { password: _pw, ...resultado } = guardado;
+    return resultado;
   }
 
   // ── Activar / desactivar ────────────────────────────────────────

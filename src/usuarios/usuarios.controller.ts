@@ -32,6 +32,28 @@ class CreateMiembroDto {
   telefono?: string;
 }
 
+class UpdateMiembroDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  nombre?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(8)
+  password?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  telefono?: string;
+}
+
+
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(RolUsuario.ADMIN)
 @Controller('usuarios')
@@ -51,22 +73,37 @@ export class UsuariosController {
     return this.usuariosService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usuariosService.findOne(id);
+  // ── Miembros del cliente (rutas específicas ANTES de las genéricas) ──
+
+  @Get(':id/miembros')
+  getMiembros(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usuariosService.findMiembrosByCliente(id);
   }
 
-  @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() body: { activo?: boolean }) {
-    if (body.activo !== undefined) {
-      return this.usuariosService.updateActivo(id, body.activo);
-    }
+  @Post(':id/miembros')
+  crearMiembro(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateMiembroDto,
+  ) {
+    return this.usuariosService.crearMiembro(id, dto);
   }
 
-  @Delete(':id')
-  desactivar(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usuariosService.desactivar(id);
+  @Patch(':clienteId/miembros/:miembroId')
+  actualizarMiembro(
+    @Param('miembroId', ParseUUIDPipe) miembroId: string,
+    @Body() dto: UpdateMiembroDto,
+  ) {
+    return this.usuariosService.actualizarMiembro(miembroId, dto);
   }
+
+  @Delete(':clienteId/miembros/:miembroId')
+  eliminarMiembro(
+    @Param('miembroId', ParseUUIDPipe) miembroId: string,
+  ) {
+    return this.usuariosService.eliminarMiembro(miembroId);
+  }
+
+  // ── Rutas genéricas ─────────────────────────────────────────────
 
   @Post(':id/bienvenida')
   async enviarBienvenida(
@@ -83,25 +120,20 @@ export class UsuariosController {
     return { ok: true };
   }
 
-  // ── Miembros del cliente ────────────────────────────────────────
-
-  @Get(':id/miembros')
-  getMiembros(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usuariosService.findMiembrosByCliente(id);
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usuariosService.findOne(id);
   }
 
-  @Post(':id/miembros')
-  crearMiembro(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: CreateMiembroDto,
-  ) {
-    return this.usuariosService.crearMiembro(id, dto);
+  @Patch(':id')
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() body: { activo?: boolean }) {
+    if (body.activo !== undefined) {
+      return this.usuariosService.updateActivo(id, body.activo);
+    }
   }
 
-  @Delete(':clienteId/miembros/:miembroId')
-  eliminarMiembro(
-    @Param('miembroId', ParseUUIDPipe) miembroId: string,
-  ) {
-    return this.usuariosService.eliminarMiembro(miembroId);
+  @Delete(':id')
+  desactivar(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usuariosService.desactivar(id);
   }
 }
