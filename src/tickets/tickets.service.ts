@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IsString, IsOptional, IsEnum, IsUUID } from 'class-validator';
@@ -134,6 +134,12 @@ export class TicketsService {
     if (dto.usuarioId) {
       const usuario = await this.usuarioRepo.findOne({ where: { id: dto.usuarioId } });
       if (!usuario) throw new NotFoundException('Usuario no encontrado');
+      if (usuario.rol === RolUsuario.CLIENTE) {
+        throw new BadRequestException('Solo puedes asignar tickets a miembros del equipo');
+      }
+      if (!usuario.activo) {
+        throw new BadRequestException('No puedes asignar tickets a un usuario inactivo');
+      }
       ticket.asignadoA = usuario;
     } else {
       ticket.asignadoA = null;

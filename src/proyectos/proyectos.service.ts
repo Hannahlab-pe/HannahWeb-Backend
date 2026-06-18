@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Proyecto } from './entities/proyecto.entity';
@@ -15,6 +15,12 @@ export class ProyectosService {
   ) {}
 
   async crear(dto: CreateProyectoDto): Promise<Proyecto> {
+    const cliente = await this.usuariosRepo.findOne({ where: { id: dto.clienteId } });
+    if (!cliente) throw new NotFoundException('Cliente no encontrado');
+    if (!cliente.activo) {
+      throw new BadRequestException('No puedes crear proyectos para un cliente inactivo');
+    }
+
     const encargados =
       dto.encargadosIds && dto.encargadosIds.length > 0
         ? await this.usuariosRepo.findBy({ id: In(dto.encargadosIds) })
@@ -27,7 +33,7 @@ export class ProyectosService {
       progreso: dto.progreso ?? 0,
       fechaInicio: dto.fechaInicio ? new Date(dto.fechaInicio) : undefined,
       fechaEntrega: dto.fechaEntrega ? new Date(dto.fechaEntrega) : undefined,
-      cliente: { id: dto.clienteId } as Usuario,
+      cliente,
       encargados,
     });
     return this.repo.save(proyecto);
@@ -86,7 +92,7 @@ export class ProyectosService {
   }
 
   async actualizar(id: string, dto: Partial<CreateProyectoDto>): Promise<Proyecto> {
-    const proyecto = await this.repo.findOne({ where: { id }, relations: ['encargados'] });
+    const proyecto = await this.repo.findOne({ where: { id }, relations: ['cliente', 'encargados'] });
     if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
 
     Object.assign(proyecto, {
@@ -103,6 +109,15 @@ export class ProyectosService {
         dto.encargadosIds.length > 0
           ? await this.usuariosRepo.findBy({ id: In(dto.encargadosIds) })
           : [];
+    }
+
+    if (dto.clienteId !== undefined) {
+      const cliente = await this.usuariosRepo.findOne({ where: { id: dto.clienteId } });
+      if (!cliente) throw new NotFoundException('Cliente no encontrado');
+      if (!cliente.activo) {
+        throw new BadRequestException('No puedes asignar el proyecto a un cliente inactivo');
+      }
+      proyecto.cliente = cliente;
     }
 
     return this.repo.save(proyecto);

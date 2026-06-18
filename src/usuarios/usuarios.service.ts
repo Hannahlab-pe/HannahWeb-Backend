@@ -8,12 +8,15 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Usuario, RolUsuario } from './entities/usuario.entity';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import { Ticket } from '../tickets/entities/ticket.entity';
 
 @Injectable()
 export class UsuariosService {
   constructor(
     @InjectRepository(Usuario)
     private readonly repo: Repository<Usuario>,
+    @InjectRepository(Ticket)
+    private readonly ticketRepo: Repository<Ticket>,
   ) { }
 
   async crear(dto: CreateUsuarioDto): Promise<Omit<Usuario, 'password'>> {
@@ -121,16 +124,37 @@ export class UsuariosService {
 
   // ── Activar / desactivar ────────────────────────────────────────
 
+  private async limpiarAsignacionesDeUsuario(usuarioId: string): Promise<void> {
+    const ticketsAsignados = await this.ticketRepo.find({
+      where: { asignadoA: { id: usuarioId } },
+      relations: ['asignadoA'],
+    });
+
+    if (ticketsAsignados.length === 0) {
+      return;
+    }
+
+    for (const ticket of ticketsAsignados) {
+      ticket.asignadoA = null;
+    }
+
+    await this.ticketRepo.save(ticketsAsignados);
+  }
+
   async desactivar(id: string): Promise<void> {
     const usuario = await this.findOne(id);
     usuario.activo = false;
     await this.repo.save(usuario);
+    await this.limpiarAsignacionesDeUsuario(id);
   }
 
   async updateActivo(id: string, activo: boolean): Promise<Omit<Usuario, 'password'>> {
     const usuario = await this.findOne(id);
     usuario.activo = activo;
     const guardado = await this.repo.save(usuario);
+    if (!activo) {
+      await this.limpiarAsignacionesDeUsuario(id);
+    }
     const { password: _pw, ...resultado } = guardado;
     return resultado;
   }
