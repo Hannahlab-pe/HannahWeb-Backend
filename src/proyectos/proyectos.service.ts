@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Proyecto } from './entities/proyecto.entity';
 import { CreateProyectoDto } from './dto/create-proyecto.dto';
+import { UpdateProyectoDto } from './dto/update-proyecto.dto';
 import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity';
 
 @Injectable()
@@ -91,7 +92,7 @@ export class ProyectosService {
     return proyecto;
   }
 
-  async actualizar(id: string, dto: Partial<CreateProyectoDto>): Promise<Proyecto> {
+  async actualizar(id: string, dto: UpdateProyectoDto): Promise<Proyecto> {
     const proyecto = await this.repo.findOne({ where: { id }, relations: ['cliente', 'encargados'] });
     if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
 
@@ -120,7 +121,12 @@ export class ProyectosService {
       proyecto.cliente = cliente;
     }
 
-    return this.repo.save(proyecto);
+    await this.repo.save(proyecto);
+
+    return this.repo.findOne({
+      where: { id },
+      relations: ['cliente', 'encargados'],
+    }) as Promise<Proyecto>;
   }
 
   async eliminar(id: string): Promise<void> {

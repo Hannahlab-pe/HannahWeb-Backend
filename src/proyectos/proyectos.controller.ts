@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { ProyectosService } from './proyectos.service';
 import { CreateProyectoDto } from './dto/create-proyecto.dto';
+import { UpdateProyectoDto } from './dto/update-proyecto.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -52,7 +53,7 @@ export class ProyectosController {
 
   @Roles(RolUsuario.ADMIN, RolUsuario.SUBADMIN)
   @Patch(':id')
-  actualizar(@Param('id', ParseUUIDPipe) id: string, @Body() dto: Partial<CreateProyectoDto>) {
+  actualizar(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProyectoDto) {
     return this.proyectosService.actualizar(id, dto);
   }
 

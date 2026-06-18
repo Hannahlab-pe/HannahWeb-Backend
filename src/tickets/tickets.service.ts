@@ -53,18 +53,31 @@ export class TicketsService {
   }
 
   findTodos(): Promise<Ticket[]> {
-    return this.repo.find({
-      relations: ['cliente', 'proyecto', 'asignadoA'],
-      order: { creadoEn: 'DESC' },
-    });
+    const fechaLimite = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return this.repo.createQueryBuilder('ticket')
+      .leftJoinAndSelect('ticket.cliente', 'cliente')
+      .leftJoinAndSelect('ticket.proyecto', 'proyecto')
+      .leftJoinAndSelect('ticket.asignadoA', 'asignadoA')
+      .where('ticket.estado != :cerrado OR ticket.actualizadoEn >= :fechaLimite', {
+        cerrado: EstadoTicket.CERRADO,
+        fechaLimite,
+      })
+      .orderBy('ticket.creadoEn', 'DESC')
+      .getMany();
   }
 
   findPorCliente(clienteId: string): Promise<Ticket[]> {
-    return this.repo.find({
-      where: { cliente: { id: clienteId } },
-      relations: ['proyecto', 'asignadoA'],
-      order: { creadoEn: 'DESC' },
-    });
+    const fechaLimite = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return this.repo.createQueryBuilder('ticket')
+      .leftJoinAndSelect('ticket.proyecto', 'proyecto')
+      .leftJoinAndSelect('ticket.asignadoA', 'asignadoA')
+      .where('ticket.clienteId = :clienteId', { clienteId })
+      .andWhere('ticket.estado != :cerrado OR ticket.actualizadoEn >= :fechaLimite', {
+        cerrado: EstadoTicket.CERRADO,
+        fechaLimite,
+      })
+      .orderBy('ticket.creadoEn', 'DESC')
+      .getMany();
   }
 
   async findOne(id: string, usuario: Usuario): Promise<Ticket> {
